@@ -3,7 +3,7 @@ from email import message
 from logging import root
 from sqlite3 import Timestamp
 from tkinter import font
-from turtle import position
+from turtle import position, speed
 from controller import Robot
 from controller import Motor
 from controller import PositionSensor
@@ -15,9 +15,10 @@ import struct
 """
 robot = Robot()
 
-# default timing
+# default
 timeStep = 32
-
+maxSpeed = 6.28
+speed = [maxSpeed, maxSpeed]
 # init motor
 '''
 wheel_left = robot.getMotor("Left wheel motor")
@@ -31,20 +32,20 @@ wheel_left.setPosition(float('inf'))
 wheel_right.setPosition(float('inf'))
 
 leftDistanceSensor = []
-leftDistanceSensor.append(robot.getDistanceSensor("Prox6"))
-leftDistanceSensor.append(robot.getDistanceSensor("Prox5"))
+leftDistanceSensor.append(robot.getDevice("ps6"))
 leftDistanceSensor[0].enable(timeStep)
+leftDistanceSensor.append(robot.getDevice("ps5"))
 leftDistanceSensor[1].enable(timeStep)
 
 rightDistanceSensor = []
-rightDistanceSensor.append(robot.getDistanceSensor("Prox1"))
-rightDistanceSensor.append(robot.getDistanceSensor("Prox2"))
+rightDistanceSensor.append(robot.getDevice("ps1"))
+rightDistanceSensor.append(robot.getDevice("ps2"))
 rightDistanceSensor[0].enable(timeStep)
 rightDistanceSensor[1].enable(timeStep)
 
 fontDistanceSensor = []
-fontDistanceSensor.append(robot.getDistanceSensor("Prox7"))
-fontDistanceSensor.append(robot.getDistanceSensor("Prox0"))
+fontDistanceSensor.append(robot.getDevice("ps7"))
+fontDistanceSensor.append(robot.getDevice("ps0"))
 fontDistanceSensor[0].enable(timeStep)
 fontDistanceSensor[1].enable(timeStep)
 
@@ -68,10 +69,10 @@ ps5.enable(timeStep)
 ps6.enable(timeStep)
 ps7.enable(timeStep)
 '''
-''''''
 # get & enable color sensor
-colorSensor = robot.getCamera("color_sensor")
-colorSensor.enable(timeStep)
+camera = robot.getCamera("camera")
+camera.enable(timeStep)
+camera.recognitionEnable(timeStep)
 
 # get & enable emitter for 
 # no need to enable since not always triggered
@@ -101,16 +102,16 @@ def start():
     wheel_right.setVelocity(0.0)
 
     # Times up check
-    while(robot.step(timeStep) != -1):
+    #while(robot.step(timeStep) != -1):
         # if reached target velocity then terminate
-        if left_Enc.getValue() == 0.0:
-            break
+    #    if left_Enc.getValue() == 0.0:
+    #        break
 
 """
     Stop func
         Set all wheel velocity to 0.0
 """
-def stop_enc():
+def stop():
     wheel_left.setVelocity(0.0)
     wheel_right.setVelocity(0.0)
 
@@ -119,7 +120,7 @@ def stop_enc():
         speed: velocity speed min - max = (-6.2) to 6.2
         encStep: Distance
 """
-def forward_enc(speed, encStep):
+def forward():
     '''
     if speed > 5.0: speed = 5.0
     elif speed < -5.0: speed = -5.0
@@ -128,68 +129,81 @@ def forward_enc(speed, encStep):
     if encStep is nan:
         encStep = 0.0
     '''
-    global last_left_enc, last_right_enc
-    last_left_enc = left_Enc.getValue()
-    last_right_enc = left_Enc.getValue()
+    #global last_left_enc, last_right_enc
+    #last_left_enc = left_Enc.getValue()
+    #last_right_enc = left_Enc.getValue()
         
-    wheel_left.setVelocity(speed)
-    wheel_right.setVelocity(speed)
-
+    #wheel_left.setVelocity(maxSpeed)
+    #wheel_right.setVelocity(maxSpeed)
+    speed[0] = maxSpeed
+    speed[1] = maxSpeed
+    
     # Times up check
-    while(robot.step(timeStep) != -1):
+    #while(robot.step(timeStep) != -1):
         # if reached target velocity then terminate
-        if left_Enc.getValue() > last_left_enc + encStep:
-            break
+        #if left_Enc.getValue() > last_left_enc + encStep:
+        #    break
 
 """
     Turn left func
         speed: velocity speed min - max = (-6.2) to 6.2
         encStep: Distance
 """
-def turn_left_enc(speed, encStep):
+def turn_left():
     '''
     if speed > 5.0: speed = 5.0
     elif speed < -5.0: speed = -5.0
     if encStep is not float or encStep is not int:
         encStep = 0.0
     '''
-    global last_left_enc, last_right_enc
-    last_left_enc = left_Enc.getValue()
-    last_right_enc = left_Enc.getValue()
+    #global last_left_enc, last_right_enc
+    #last_left_enc = left_Enc.getValue()
+    #last_right_enc = left_Enc.getValue()
         
-    wheel_left.setVelocity(-speed)
-    wheel_right.setVelocity(speed)
-
+    #wheel_left.setVelocity(-0.4 * maxSpeed)
+    #wheel_right.setVelocity(maxSpeed * 0.6)
+    #stop()
+    speed[0] = -0.1 * maxSpeed
+    speed[1] =  maxSpeed
+    
     # Times up check
-    while(robot.step(timeStep) != -1):
+    #while(robot.step(timeStep) != -1):
         # if reached target velocity then terminate
-        if right_Enc.getValue() > last_right_enc + encStep:
-            break
+    #    if right_Enc.getValue() > last_right_enc + encStep:
+    #        break
 
 """
     Turn right func
         speed: velocity speed min - max = (-6.2) to 6.2
         encStep: Distance
 """
-def turn_right_enc(speed, encStep):
+def turn_right():
     '''
         if speed > 5.0: speed = 5.0
         elif speed < -5.0: speed = -5.0
         if encStep is not float or encStep is not int:
             encStep = 0.0
     ''' 
-    global last_left_enc, last_right_enc
-    last_left_enc = left_Enc.getValue()
-    last_right_enc = left_Enc.getValue()
+    #global last_left_enc, last_right_enc
+    #last_left_enc = left_Enc.getValue()
+    #last_right_enc = left_Enc.getValue()
         
-    wheel_left.setVelocity(speed)
-    wheel_right.setVelocity(-speed)
+    #wheel_left.setVelocity(0.6 * maxSpeed)
+    #wheel_right.setVelocity(-0.4 * maxSpeed)
+    #stop()
+    speed[0] = maxSpeed
+    speed[1] = -0.1 * maxSpeed
 
     # Times up check
-    while(robot.step(timeStep) != -1):
+    #while(robot.step(timeStep) != -1):
         # if reached target velocity then terminate
-        if left_Enc.getValue() > last_left_enc + encStep:
-            break
+    #    if left_Enc.getValue() > last_left_enc + encStep:
+    #        break
+
+def spin():
+    stop()
+    speed[0] = (1.0 * maxSpeed)
+    speed[1] = (-1.0 * maxSpeed)
 
 def sendMessage(v1, v2, victimType):
     message = struct.pack('i i c', v1, v2, victimType.encode())
@@ -204,15 +218,53 @@ def sendVictimMessage(victimType = 'N'):
         
 
     
-
-start()
-stop_enc()
-#forward_enc(5.0, 10,0) 
-while robot.step(timeStep) != -1:
-    forward_enc(5.0, 15)
-
     Normal_color = b'\xfc\xfc\xfc\xff' 
     swamp_color = b'\x8e\xde\xf5\xff'
     hole_color = b'<<<\xff'
- 
-    print(colorSensor.getImage())
+start()
+stop()
+#forward_enc(5.0, 10,0) 
+
+# speed[0]: left wheel,
+# speed[1]: right wheel 
+
+
+while robot.step(timeStep) != -1:
+    #forward_enc(5.0, 15)
+    speed[0] = maxSpeed
+    speed[1] = maxSpeed
+
+    for i in range(2):
+        print("leftDistanceSensor[",i,"]", leftDistanceSensor[i].getValue())        
+        print("rightDistanceSensor[",i,"]", rightDistanceSensor[i].getValue())
+        print("fontDistanceSensor[",i,"]", fontDistanceSensor[i].getValue())
+    stop()
+    '''
+    for i in range(2):
+        if leftDistanceSensor[i].getValue() < 0.1:
+            turn_right()
+        elif rightDistanceSensor[i].getValue() < 0.2:
+            turn_left()
+    '''
+    if fontDistanceSensor[0].getValue() < 0.1 and fontDistanceSensor[1].getValue() < 0.1:
+        if leftDistanceSensor[0].getValue() < 0.1 or leftDistanceSensor[1].getValue() < 0.1:
+            turn_right()
+
+    if leftDistanceSensor[0].getValue() < 0.1 or leftDistanceSensor[1].getValue() < 0.1:
+        turn_right()
+
+    if fontDistanceSensor[0].getValue() < 0.1 and fontDistanceSensor[1].getValue() < 0.1:
+        if rightDistanceSensor[0].getValue() < 0.1 or rightDistanceSensor[1].getValue() < 0.1:
+            turn_left()
+
+    if rightDistanceSensor[0].getValue() < 0.1 or rightDistanceSensor[1].getValue() < 0.1:
+        turn_left()
+
+    if fontDistanceSensor[0].getValue() < 0.1 and fontDistanceSensor[1].getValue() < 0.1:
+        if leftDistanceSensor[0].getValue() < 0.1 or leftDistanceSensor[1].getValue() < 0.1:
+            if rightDistanceSensor[0].getValue() < 0.1 or rightDistanceSensor[1].getValue() < 0.1:
+                spin()
+    
+    wheel_left.setVelocity(speed[0])
+    wheel_right.setVelocity(speed[1])
+    
