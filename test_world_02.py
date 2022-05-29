@@ -2,6 +2,7 @@ from cmath import nan
 from email import message
 from logging import root
 from sqlite3 import Timestamp
+from tkinter import font
 from turtle import position
 from controller import Robot
 from controller import Motor
@@ -18,11 +19,36 @@ robot = Robot()
 timeStep = 32
 
 # init motor
+'''
+wheel_left = robot.getMotor("Left wheel motor")
+wheel_right = robot.getMotor("Right wheel motor")
+wheel_left.setPosition(float('inf'))
+wheel_right.setPosition(float('inf'))
+'''
 wheel_left = robot.getDevice("wheel1 motor")
 wheel_right = robot.getDevice("wheel2 motor")
 wheel_left.setPosition(float('inf'))
 wheel_right.setPosition(float('inf'))
 
+leftDistanceSensor = []
+leftDistanceSensor.append(robot.getDistanceSensor("Prox6"))
+leftDistanceSensor.append(robot.getDistanceSensor("Prox5"))
+leftDistanceSensor[0].enable(timeStep)
+leftDistanceSensor[1].enable(timeStep)
+
+rightDistanceSensor = []
+rightDistanceSensor.append(robot.getDistanceSensor("Prox1"))
+rightDistanceSensor.append(robot.getDistanceSensor("Prox2"))
+rightDistanceSensor[0].enable(timeStep)
+rightDistanceSensor[1].enable(timeStep)
+
+fontDistanceSensor = []
+fontDistanceSensor.append(robot.getDistanceSensor("Prox7"))
+fontDistanceSensor.append(robot.getDistanceSensor("Prox0"))
+fontDistanceSensor[0].enable(timeStep)
+fontDistanceSensor[1].enable(timeStep)
+
+'''
 # init sensor ps1 to ps7
 ps0 = robot.getDevice("ps0")
 ps1 = robot.getDevice("ps1")
@@ -41,7 +67,8 @@ ps4.enable(timeStep)
 ps5.enable(timeStep)
 ps6.enable(timeStep)
 ps7.enable(timeStep)
-
+'''
+''''''
 # get & enable color sensor
 colorSensor = robot.getCamera("color_sensor")
 colorSensor.enable(timeStep)
@@ -183,25 +210,6 @@ stop_enc()
 #forward_enc(5.0, 10,0) 
 while robot.step(timeStep) != -1:
     forward_enc(5.0, 15)
-    
-    '''
-        print("ps0: ", ps0.getValue())
-        print("ps1: ", ps0.getValue())
-        print("ps2: ", ps0.getValue())
-        print("ps3: ", ps0.getValue())
-        print("ps4: ", ps0.getValue())
-        print("ps5: ", ps0.getValue())
-        print("ps6: ", ps0.getValue())
-        print("ps7: ", ps0.getValue())
-    '''
-    if ps7.getValue() < 0.044:
-        stop_enc()
-        if ps5.getValue() < 0.06:
-            turn_right_enc(5.0, 2.1)
-            stop_enc()
-            wheel_left.setVelocity(5.0)
-            wheel_right.setVelocity(5.0)
-            
 
     Normal_color = b'\xfc\xfc\xfc\xff' 
     swamp_color = b'\x8e\xde\xf5\xff'
