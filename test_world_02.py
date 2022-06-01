@@ -1,35 +1,50 @@
-from cmath import nan
+from cmath import nan, pi
 from email import message
 from logging import root
 from sqlite3 import Timestamp
 from tkinter import font
 from turtle import position, speed
+#import cv2
+#import numpy as np
 from controller import Robot
 from controller import Motor
 from controller import PositionSensor
 import math
 import struct
-
-"""
-    Default setup
-"""
 robot = Robot()
 
-# default
+# default value
 timeStep = 32
-maxSpeed = 6.28
-speed = [maxSpeed, maxSpeed]
+maxVelocity = 6.28
+
+# color definition for trap detect
+#normPlate = b'\xfc\xfc\xfc\xff' 
+swampColor = b'\x8e\xde\xf5\xff'   #swamp_color = b'R\x89\xa7\xff'
+holeColor = b'<<<\xff'             #hole_color = b'\x1e\x1e\x1e\xff'
+
+# for victim identification
+distanceFromWall = 0.05
+victimProximity = 0.03
+messageSentTrigger = False
+
+startTime = 0
+duration = 0
+victimDetectedCheck = False
+victimTimer = 0
+
+speed = [maxVelocity, maxVelocity]
+useCamera = True
 # init motor
 '''
-wheel_left = robot.getMotor("Left wheel motor")
-wheel_right = robot.getMotor("Right wheel motor")
-wheel_left.setPosition(float('inf'))
-wheel_right.setPosition(float('inf'))
+wheelLeft = robot.getMotor("Left wheel motor")
+wheelRight = robot.getMotor("Right wheel motor")
+wheelLeft.setPosition(float('inf'))
+wheelRight.setPosition(float('inf'))
 '''
-wheel_left = robot.getDevice("wheel1 motor")
-wheel_right = robot.getDevice("wheel2 motor")
-wheel_left.setPosition(float('inf'))
-wheel_right.setPosition(float('inf'))
+wheelLeft = robot.getDevice("wheel1 motor")
+wheelRight = robot.getDevice("wheel2 motor")
+wheelLeft.setPosition(float('inf'))
+wheelRight.setPosition(float('inf'))
 
 leftDistanceSensor = []
 leftDistanceSensor.append(robot.getDevice("ps6"))
@@ -70,7 +85,7 @@ ps6.enable(timeStep)
 ps7.enable(timeStep)
 '''
 # get & enable color sensor
-camera = robot.getCamera("camera")
+camera = robot.getDevice("colour_sensor")
 camera.enable(timeStep)
 camera.recognitionEnable(timeStep)
 
@@ -84,22 +99,22 @@ gps.enable(timeStep)
 sentMessageStatus = False
 
 # init encoder
-left_Enc = wheel_left.getPositionSensor()
-right_Enc = wheel_right.getPositionSensor()
+left_Enc = wheelLeft.getPositionSensor()
+right_Enc = wheelRight.getPositionSensor()
 left_Enc.enable(timeStep)
 right_Enc.enable(timeStep)
 
 last_left_enc, last_right_enc = 0.0, 0.0
-"""wheel_left.setVelocity(5.0)
-wheel_right.setVelocity(5.0)"""
+"""wheelLeft.setVelocity(5.0)
+wheelRight.setVelocity(5.0)"""
 
 """
     Initial robot
 """
 def start():
     
-    wheel_left.setVelocity(0.0)
-    wheel_right.setVelocity(0.0)
+    wheelLeft.setVelocity(0.0)
+    wheelRight.setVelocity(0.0)
 
     # Times up check
     #while(robot.step(timeStep) != -1):
@@ -112,8 +127,8 @@ def start():
         Set all wheel velocity to 0.0
 """
 def stop():
-    wheel_left.setVelocity(0.0)
-    wheel_right.setVelocity(0.0)
+    wheelLeft.setVelocity(0.0)
+    wheelRight.setVelocity(0.0)
 
 """
     Forward func
@@ -133,10 +148,10 @@ def forward():
     #last_left_enc = left_Enc.getValue()
     #last_right_enc = left_Enc.getValue()
         
-    #wheel_left.setVelocity(maxSpeed)
-    #wheel_right.setVelocity(maxSpeed)
-    speed[0] = maxSpeed
-    speed[1] = maxSpeed
+    #wheelLeft.setVelocity(maxVelocity)
+    #wheelRight.setVelocity(maxVelocity)
+    speed[0] = maxVelocity
+    speed[1] = maxVelocity
     
     # Times up check
     #while(robot.step(timeStep) != -1):
@@ -149,7 +164,7 @@ def forward():
         speed: velocity speed min - max = (-6.2) to 6.2
         encStep: Distance
 """
-def turn_left():
+def turnLeft():
     '''
     if speed > 5.0: speed = 5.0
     elif speed < -5.0: speed = -5.0
@@ -160,11 +175,11 @@ def turn_left():
     #last_left_enc = left_Enc.getValue()
     #last_right_enc = left_Enc.getValue()
         
-    #wheel_left.setVelocity(-0.4 * maxSpeed)
-    #wheel_right.setVelocity(maxSpeed * 0.6)
+    #wheelLeft.setVelocity(-0.4 * maxVelocity)
+    #wheelRight.setVelocity(maxVelocity * 0.6)
     #stop()
-    speed[0] = -0.1 * maxSpeed
-    speed[1] =  maxSpeed
+    speed[0] = -0.1 * maxVelocity
+    speed[1] =  maxVelocity
     
     # Times up check
     #while(robot.step(timeStep) != -1):
@@ -177,7 +192,7 @@ def turn_left():
         speed: velocity speed min - max = (-6.2) to 6.2
         encStep: Distance
 """
-def turn_right():
+def turnRight():
     '''
         if speed > 5.0: speed = 5.0
         elif speed < -5.0: speed = -5.0
@@ -188,11 +203,11 @@ def turn_right():
     #last_left_enc = left_Enc.getValue()
     #last_right_enc = left_Enc.getValue()
         
-    #wheel_left.setVelocity(0.6 * maxSpeed)
-    #wheel_right.setVelocity(-0.4 * maxSpeed)
+    #wheelLeft.setVelocity(0.6 * maxVelocity)
+    #wheelRight.setVelocity(-0.4 * maxVelocity)
     #stop()
-    speed[0] = maxSpeed
-    speed[1] = -0.1 * maxSpeed
+    speed[0] = maxVelocity
+    speed[1] = -0.1 * maxVelocity
 
     # Times up check
     #while(robot.step(timeStep) != -1):
@@ -202,8 +217,8 @@ def turn_right():
 
 def spin():
     stop()
-    speed[0] = (1.0 * maxSpeed)
-    speed[1] = (-1.0 * maxSpeed)
+    speed[0] = (1.0 * maxVelocity)
+    speed[1] = (-1.0 * maxVelocity)
 
 def sendMessage(v1, v2, victimType):
     message = struct.pack('i i c', v1, v2, victimType.encode())
@@ -215,12 +230,7 @@ def sendVictimMessage(victimType = 'N'):
     if not sentMessageStatus:
         sendMessage(int(position[0] * 100), int(position[2] * 100), victimType)
         sentMessageStatus = True
-        
 
-    
-    Normal_color = b'\xfc\xfc\xfc\xff' 
-    swamp_color = b'\x8e\xde\xf5\xff'
-    hole_color = b'<<<\xff'
 start()
 stop()
 #forward_enc(5.0, 10,0) 
@@ -231,8 +241,8 @@ stop()
 
 while robot.step(timeStep) != -1:
     #forward_enc(5.0, 15)
-    speed[0] = maxSpeed
-    speed[1] = maxSpeed
+    speed[0] = maxVelocity
+    speed[1] = maxVelocity
 
     for i in range(2):
         print("leftDistanceSensor[",i,"]", leftDistanceSensor[i].getValue())        
@@ -242,29 +252,29 @@ while robot.step(timeStep) != -1:
     '''
     for i in range(2):
         if leftDistanceSensor[i].getValue() < 0.1:
-            turn_right()
+            turnRight()
         elif rightDistanceSensor[i].getValue() < 0.2:
-            turn_left()
+            turnLeft()
     '''
     if fontDistanceSensor[0].getValue() < 0.1 and fontDistanceSensor[1].getValue() < 0.1:
         if leftDistanceSensor[0].getValue() < 0.1 or leftDistanceSensor[1].getValue() < 0.1:
-            turn_right()
+            turnRight()
 
     if leftDistanceSensor[0].getValue() < 0.1 or leftDistanceSensor[1].getValue() < 0.1:
-        turn_right()
+        turnRight()
 
     if fontDistanceSensor[0].getValue() < 0.1 and fontDistanceSensor[1].getValue() < 0.1:
         if rightDistanceSensor[0].getValue() < 0.1 or rightDistanceSensor[1].getValue() < 0.1:
-            turn_left()
+            turnLeft()
 
     if rightDistanceSensor[0].getValue() < 0.1 or rightDistanceSensor[1].getValue() < 0.1:
-        turn_left()
+        turnLeft()
 
     if fontDistanceSensor[0].getValue() < 0.1 and fontDistanceSensor[1].getValue() < 0.1:
         if leftDistanceSensor[0].getValue() < 0.1 or leftDistanceSensor[1].getValue() < 0.1:
             if rightDistanceSensor[0].getValue() < 0.1 or rightDistanceSensor[1].getValue() < 0.1:
                 spin()
     
-    wheel_left.setVelocity(speed[0])
-    wheel_right.setVelocity(speed[1])
+    wheelLeft.setVelocity(speed[0])
+    wheelRight.setVelocity(speed[1])
     
